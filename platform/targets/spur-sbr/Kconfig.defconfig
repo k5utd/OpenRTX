@@ -1,0 +1,16 @@
+# K5UTD SPUR-SBR board configuration
+
+# SPDX-License-Identifier: GPL-3.0-only
+
+config BOARD
+	default "K5UTD_SPURSBR"
+	depends on BOARD_K5UTD_SPURSBR
+
+config HEAP_MEM_POOL_SIZE
+	default 98304 if WIFI
+	default 40960 if BT
+	default 4096
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32 if BT
+endchoice

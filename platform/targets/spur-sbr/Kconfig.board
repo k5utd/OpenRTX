@@ -1,0 +1,12 @@
+# K5UTD SPUR-SBR board configuration
+
+# SPDX-License-Identifier: GPL-3.0-only
+# TODO: TAPR-OHL-1.0?
+
+config BOARD_K5UTD_SPUR-SBR
+	bool "K5UTD SPUR-SBR Board"
+	depends on SOC_SERIES_ESP32C3
+
+choice SOC_PART_NUMBER
+	default SOC_ESP32C3_WROOM_N4
+endchoice
