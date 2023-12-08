@@ -1,8 +1,8 @@
 /***************************************************************************
- *   Copyright (C) 2020 - 2023 by Federico Amedeo Izzo IU2NUO,             *
- *                                Niccolò Izzo IU2KIN                      *
- *                                Frederik Saraci IU2NRO                   *
- *                                Silvano Seva IU2KWO                      *
+ *   Copyright (C) 2023 by Federico Amedeo Izzo IU2NUO,                    *
+ *                         Niccolò Izzo IU2KIN                             *
+ *                         Frederik Saraci IU2NRO                          *
+ *                         Silvano Seva IU2KWO                             *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,36 +18,27 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <stdio.h>
-#include <stdint.h>
-#include <sys/types.h>
-#include "W25Qx.h"
-#include <interfaces/delays.h>
+#include <peripherals/rng.h>
+#include <random>
+#include <limits>
 
-void printChunk(void *chunk)
+static std::mt19937 rng;
+
+void rng_init()
 {
-    uint8_t *ptr = ((uint8_t *) chunk);
-    for(size_t i = 0; i < 16; i++) printf("%02x ", ptr[i]);
-    for(size_t i = 0; i < 16; i++)
-    {
-        if((ptr[i] > 0x22) && (ptr[i] < 0x7f)) printf("%c", ptr[i]);
-        else printf(".");
-    }
+    std::random_device seed;
+    rng.seed(seed());
 }
 
-int main()
+void rng_terminate()
 {
-    delayMs(5000);
-    W25Qx_init();
-    W25Qx_wakeup();
 
-    for(uint32_t addr = 0; addr < 0xFFFFFF; addr += 16)
-    {
-        uint8_t buf[16];
-        (void) W25Qx_readData(addr, buf, 16);
-        printf("\r\n%08lx: ", addr);
-        printChunk(buf);
-    }
+}
 
-    return 0;
+uint32_t rng_get()
+{
+    std::uniform_int_distribution< uint32_t >
+    distribution(0, std::numeric_limits<uint32_t>::max());
+
+    return distribution(rng);
 }

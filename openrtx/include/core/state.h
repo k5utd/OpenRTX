@@ -59,10 +59,13 @@ typedef struct
     bool       gpsDetected;
     bool       backup_eflash;
     bool       restore_eflash;
-    char       m17_dest[10];
     bool       txDisable;
+    uint8_t    step_index;
 }
 state_t;
+
+extern uint32_t freq_steps[];
+extern size_t n_freq_steps;
 
 enum TunerMode
 {

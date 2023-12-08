@@ -1,8 +1,8 @@
 /***************************************************************************
- *   Copyright (C) 2020 - 2023 by Federico Amedeo Izzo IU2NUO,             *
- *                                Niccolò Izzo IU2KIN                      *
- *                                Frederik Saraci IU2NRO                   *
- *                                Silvano Seva IU2KWO                      *
+ *   Copyright (C) 2023 by Federico Amedeo Izzo IU2NUO,                    *
+ *                         Niccolò Izzo IU2KIN                             *
+ *                         Frederik Saraci IU2NRO                          *
+ *                         Silvano Seva IU2KWO                             *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,38 +18,20 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <wchar.h>
-#include <string.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/flash.h>
 #include <interfaces/nvmem.h>
-#include <interfaces/delays.h>
-#include <calibInfo_MDx.h>
-#include <utils.h>
-#include "W25Qx.h"
+#include "flash_zephyr.h"
 
-W25Qx_DEVICE_DEFINE(W25Q128_main, W25Qx_api)
-W25Qx_DEVICE_DEFINE(W25Q128_secr, W25Qx_secReg_api)
+ZEPHYR_FLASH_DEVICE_DEFINE(extFlash, flash);
 
 static const struct nvmArea areas[] =
 {
     {
         .name       = "External flash",
-        .dev        = &W25Q128_main,
-        .startAddr  = 0x0000,
-        .size       = 0x1000000,  // 16 MB, 128 Mbit
-        .partitions = NULL
-    },
-    {
-        .name       = "Cal. data 1",
-        .dev        = &W25Q128_secr,
-        .startAddr  = 0x1000,
-        .size       = 0x100,      // 256 byte
-        .partitions = NULL
-    },
-    {
-        .name       = "Cal. data 2",
-        .dev        = &W25Q128_secr,
-        .startAddr  = 0x2000,
-        .size       = 0x100,      // 256 byte
+        .dev        = &extFlash,
+        .startAddr  = FIXED_PARTITION_OFFSET(storage_partition),
+        .size       = FIXED_PARTITION_SIZE(storage_partition),
         .partitions = NULL
     }
 };
@@ -57,12 +39,12 @@ static const struct nvmArea areas[] =
 
 void nvm_init()
 {
-    W25Qx_init();
+
 }
 
 void nvm_terminate()
 {
-    W25Qx_terminate();
+
 }
 
 size_t nvm_getMemoryAreas(const struct nvmArea **list)
@@ -75,7 +57,6 @@ size_t nvm_getMemoryAreas(const struct nvmArea **list)
 void nvm_readCalibData(void *buf)
 {
     (void) buf;
-    return;
 }
 
 void nvm_readHwInfo(hwInfo_t *info)
@@ -83,11 +64,31 @@ void nvm_readHwInfo(hwInfo_t *info)
     (void) info;
 }
 
-/**
- * TODO: functions temporarily implemented in "nvmem_settings_MDx.c"
+int nvm_readVfoChannelData(channel_t *channel)
+{
+    (void) channel;
 
-int nvm_readVFOChannelData(channel_t *channel)
+    return -1;
+}
+
 int nvm_readSettings(settings_t *settings)
-int nvm_writeSettings(const settings_t *settings)
+{
+    (void) settings;
 
-*/
+    return -1;
+}
+
+int nvm_writeSettings(const settings_t *settings)
+{
+    (void) settings;
+
+    return -1;
+}
+
+int nvm_writeSettingsAndVfo(const settings_t *settings, const channel_t *vfo)
+{
+    (void) settings;
+    (void) vfo;
+
+    return -1;
+}

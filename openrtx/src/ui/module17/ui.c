@@ -314,16 +314,12 @@ void ui_init()
     ui_state = (const struct ui_state_t){ 0 };
 }
 
-void ui_drawSplashScreen(bool centered)
+void ui_drawSplashScreen()
 {
     gfx_clearScreen();
-    point_t splash_origin = {0,0};
 
-    if(centered)
-        splash_origin.y = SCREEN_HEIGHT / 2 - 6;
-    else
-        splash_origin.y = SCREEN_HEIGHT / 5;
-    gfx_print(splash_origin, FONT_SIZE_12PT, TEXT_ALIGN_CENTER, yellow_fab413, "O P N\nR T X");
+    point_t origin = {0, (SCREEN_HEIGHT / 2) - 6};
+    gfx_print(origin, FONT_SIZE_12PT, TEXT_ALIGN_CENTER, yellow_fab413, "O P N\nR T X");
 }
 
 freq_t _ui_freq_add_digit(freq_t freq, uint8_t pos, uint8_t number)
@@ -817,7 +813,7 @@ void ui_updateFSM(bool *sync_rtx)
                     {
                         _ui_textInputConfirm(ui_state.new_callsign);
                         // Save selected callsign and disable input mode
-                        strncpy(state.m17_dest, ui_state.new_callsign, 10);
+                        strncpy(state.settings.m17_dest, ui_state.new_callsign, 10);
                         *sync_rtx = true;
                         ui_state.edit_mode = false;
                     }

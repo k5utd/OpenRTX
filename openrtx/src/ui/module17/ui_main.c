@@ -131,6 +131,8 @@ void _ui_drawModeInfo(ui_state_t* ui_state)
             else
             {
                 char *dst = NULL;
+                char *last = NULL;
+
                 if(ui_state->edit_mode)
                 {
                     dst = ui_state->new_callsign;
@@ -143,11 +145,16 @@ void _ui_drawModeInfo(ui_state_t* ui_state)
                         dst = rtxStatus.destination_address;
                 }
 
+                if(strnlen(rtxStatus.M17_src, 10) == 0)
+                    last = "LAST";
+                else
+                    last = rtxStatus.M17_src;
+
                 // Print CAN
                 gfx_print(layout.top_pos, layout.top_font, TEXT_ALIGN_RIGHT,
                           color_white, "CAN %02d", state.settings.m17_can);
                 gfx_print(layout.line2_pos, layout.line2_font, TEXT_ALIGN_CENTER,
-                          color_white, "LAST");
+                          color_white, last);
                 // Print M17 Destination ID on line 2
                 gfx_print(layout.line3_pos, layout.line3_font, TEXT_ALIGN_CENTER,
                           color_white, "%s", dst);
@@ -232,6 +239,8 @@ void _ui_drawMainBottom()
     // Squelch bar
     float rssi = last_state.rssi;
     float squelch = last_state.settings.sqlLevel / 16.0f;
+    // Module17 0.1e does not know the volume level, so we will never draw it
+    float volume = platform_getVolumeLevel() / 255.0f;
     uint16_t meter_width = SCREEN_WIDTH - 2 * layout.horizontal_pad;
     uint16_t meter_height = layout.bottom_h;
     point_t meter_pos = { layout.horizontal_pad,
@@ -245,6 +254,8 @@ void _ui_drawMainBottom()
                            meter_height,
                            rssi,
                            squelch,
+                           volume,
+                           false,
                            yellow_fab413);
             break;
         case OPMODE_DMR:
@@ -252,14 +263,18 @@ void _ui_drawMainBottom()
                                 meter_width,
                                 meter_height,
                                 rssi,
-                                mic_level);
+                                mic_level,
+                                volume,
+                                false);
             break;
         case OPMODE_M17:
             /*gfx_drawSmeterLevel(meter_pos,
                                 meter_width,
                                 meter_height,
                                 rssi,
-                                mic_level);*/
+                                mic_level,
+                                volume,
+                                false);*/
             break;
     }
 }

@@ -2,7 +2,7 @@
 ## OpenRTX - Modular Open Source Radio Firmware
 ##
 project('OpenRTX', ['c', 'cpp'],
-  version : '0.3.5',
+  version : '0.3.6',
   default_options : ['warning_level=3', 'b_staticpic=false'])
 
 ##
@@ -55,6 +55,7 @@ openrtx_src = ['openrtx/src/core/state.c',
                'openrtx/src/core/voicePrompts.c',
                'openrtx/src/core/voicePromptUtils.c',
                'openrtx/src/core/voicePromptData.S',
+               'openrtx/src/core/nvmem_access.c',
                'openrtx/src/rtx/rtx.cpp',
                'openrtx/src/rtx/OpMode_FM.cpp',
                'openrtx/src/rtx/OpMode_M17.cpp',
@@ -227,6 +228,7 @@ stm32f405_src = ['platform/mcu/STM32F4xx/boot/startup.cpp',
                  'platform/mcu/STM32F4xx/drivers/SPI2.c',
                  'platform/mcu/STM32F4xx/drivers/USART3.cpp',
                  'platform/mcu/STM32F4xx/drivers/flash.c',
+                 'platform/mcu/STM32F4xx/drivers/rng.c',
                  'platform/drivers/audio/stm32_dac.cpp',
                  'platform/drivers/audio/stm32_adc.cpp',
                  'platform/drivers/audio/stm32_pwm.cpp',
@@ -250,6 +252,7 @@ mk22fn512_src = ['platform/mcu/MK22FN512xxx12/boot/startup.cpp',
                  'platform/mcu/MK22FN512xxx12/drivers/gpio.c',
                  'platform/mcu/MK22FN512xxx12/drivers/delays.cpp',
                  'platform/mcu/MK22FN512xxx12/drivers/I2C0.c',
+                 'platform/mcu/MK22FN512xxx12/drivers/rng.c',
                  'platform/mcu/MK22FN512xxx12/drivers/usb/usb_device_cdc_acm.c',
                  'platform/mcu/MK22FN512xxx12/drivers/usb/usb_device_ch9.c',
                  'platform/mcu/MK22FN512xxx12/drivers/usb/usb_device_dci.c',
@@ -280,10 +283,13 @@ linux_platform_src = ['platform/targets/linux/emulator/emulator.c',
                       'platform/drivers/NVM/nvmem_linux.c',
                       'platform/drivers/GPS/GPS_linux.c',
                       'platform/mcu/x86_64/drivers/delays.c',
+                      'platform/mcu/x86_64/drivers/rng.cpp',
                       'platform/drivers/baseband/radio_linux.cpp',
                       'platform/drivers/audio/audio_linux.c',
+                      'platform/drivers/audio/file_source.c',
                       'platform/targets/linux/platform.c',
-                      'platform/drivers/CPS/cps_io_libc.c']
+                      'platform/drivers/CPS/cps_io_libc.c',
+                      'platform/drivers/NVM/posix_file.c']
 
 linux_src = src + linux_platform_src
 
@@ -400,9 +406,9 @@ mod17_def = def + stm32f405_def + {'PLATFORM_MOD17': ''}
 ## -------------------------- Compilation arguments ----------------------------
 ##
 
-linux_c_args   = ['-DPLATFORM_LINUX']
-linux_cpp_args = ['-std=c++14', '-DPLATFORM_LINUX']
-linux_l_args   = ['-lm', '-lreadline', '-lpulse-simple']
+linux_c_args   = ['-ffunction-sections', '-fdata-sections', '-DPLATFORM_LINUX']
+linux_cpp_args = ['-ffunction-sections', '-fdata-sections', '-std=c++14', '-DPLATFORM_LINUX']
+linux_l_args   = ['-lm', '-lreadline', '-lpulse-simple', '-Wl,--gc-sections']
 
 # Add AddressSanitizer if required
 if get_option('asan')
@@ -605,13 +611,14 @@ elif build_machine.system() == 'windows'
 endif
 gd77_loader = find_program('scripts/gd-77_firmware_loader.py', required:false, disabler:true)
 dfu_util    = find_program('dfu-util',                         required:false, disabler:true)
-west        = find_program('west',                              required:false, disabler:true)
+west        = find_program('west',                             required:false, disabler:true)
+uf2conv     = find_program('scripts/uf2conv.py',               required:false, disabler:true)
 
 foreach t : targets
 
   name = 'openrtx_'+t['name']
 
-  # ttwrplus is a Zephyr target, thus we only wrap west
+  # ttwrplus is a Zephyr target, we compile it using west and package it in uf2 format
   if name == 'openrtx_ttwrplus'
 
       txt = custom_target('Copy CMakeLists.txt',
@@ -626,10 +633,15 @@ foreach t : targets
                           output  : name+'_bin',
                           command : [west, 'build', '-b', 'ttwrplus', '-d', '.', '..'])
 
+      uf2 = custom_target(name+'_uf2',
+                          input   : bin,
+                          output  : name+'.uf2',
+                          command : [uf2conv, 'zephyr/zephyr.bin', '-c', '-f', 'ESP32S3', '-b', '0x0', '-o', '@OUTPUT@'])
+
       custom_target(name+'_flash',
-                    input   : bin,
+                    input   : uf2,
                     output  : name+'_flash',
-                    command : [west, 'flash'])
+                    command : [uf2conv, '-D', '@INPUT@'])
 
   else
 

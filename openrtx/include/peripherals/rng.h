@@ -1,8 +1,8 @@
 /***************************************************************************
- *   Copyright (C) 2020 - 2023 by Federico Amedeo Izzo IU2NUO,             *
- *                                Niccolò Izzo IU2KIN                      *
- *                                Frederik Saraci IU2NRO                   *
- *                                Silvano Seva IU2KWO                      *
+ *   Copyright (C) 2023 by Federico Amedeo Izzo IU2NUO,                    *
+ *                         Niccolò Izzo IU2KIN                             *
+ *                         Frederik Saraci IU2NRO                          *
+ *                         Silvano Seva IU2KWO                             *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,36 +18,38 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <stdio.h>
+#ifndef RNG_H
+#define RNG_H
+
 #include <stdint.h>
-#include <sys/types.h>
-#include "W25Qx.h"
-#include <interfaces/delays.h>
 
-void printChunk(void *chunk)
-{
-    uint8_t *ptr = ((uint8_t *) chunk);
-    for(size_t i = 0; i < 16; i++) printf("%02x ", ptr[i]);
-    for(size_t i = 0; i < 16; i++)
-    {
-        if((ptr[i] > 0x22) && (ptr[i] < 0x7f)) printf("%c", ptr[i]);
-        else printf(".");
-    }
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * Driver for Random Number Generator.
+ */
+
+/**
+ * Initialise the RNG driver.
+ */
+void rng_init();
+
+/**
+ * Shut down the RNG module.
+ */
+void rng_terminate();
+
+/**
+ * Generate a 32 bit random number.
+ *
+ * @return random number.
+ */
+uint32_t rng_get();
+
+#ifdef __cplusplus
 }
+#endif
 
-int main()
-{
-    delayMs(5000);
-    W25Qx_init();
-    W25Qx_wakeup();
-
-    for(uint32_t addr = 0; addr < 0xFFFFFF; addr += 16)
-    {
-        uint8_t buf[16];
-        (void) W25Qx_readData(addr, buf, 16);
-        printf("\r\n%08lx: ", addr);
-        printChunk(buf);
-    }
-
-    return 0;
-}
+#endif /* INTERFACES_GPS_H */

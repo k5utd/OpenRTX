@@ -1,8 +1,8 @@
 /***************************************************************************
- *   Copyright (C) 2020 - 2023 by Federico Amedeo Izzo IU2NUO,             *
- *                                Niccolò Izzo IU2KIN                      *
- *                                Frederik Saraci IU2NRO                   *
- *                                Silvano Seva IU2KWO                      *
+ *   Copyright (C) 2023 by Federico Amedeo Izzo IU2NUO,                    *
+ *                         Niccolò Izzo IU2KIN                             *
+ *                         Frederik Saraci IU2NRO                          *
+ *                         Silvano Seva IU2KWO                             *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,36 +18,35 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <stdio.h>
-#include <stdint.h>
-#include <sys/types.h>
-#include "W25Qx.h"
-#include <interfaces/delays.h>
+#ifndef FLASH_ZEPHYR_H
+#define FLASH_ZEPHYR_H
 
-void printChunk(void *chunk)
-{
-    uint8_t *ptr = ((uint8_t *) chunk);
-    for(size_t i = 0; i < 16; i++) printf("%02x ", ptr[i]);
-    for(size_t i = 0; i < 16; i++)
-    {
-        if((ptr[i] > 0x22) && (ptr[i] < 0x7f)) printf("%c", ptr[i]);
-        else printf(".");
-    }
-}
+#include <interfaces/nvmem.h>
 
-int main()
-{
-    delayMs(5000);
-    W25Qx_init();
-    W25Qx_wakeup();
+/**
+ * Wrapper interface for the Zephyr RTOS flash memory device driver.
+ */
 
-    for(uint32_t addr = 0; addr < 0xFFFFFF; addr += 16)
-    {
-        uint8_t buf[16];
-        (void) W25Qx_readData(addr, buf, 16);
-        printf("\r\n%08lx: ", addr);
-        printChunk(buf);
-    }
+/**
+ *  Device driver API for Zephyr RTOS flash memory.
+ */
+extern const struct nvmApi zephyr_flash_api;
 
-    return 0;
-}
+
+/**
+ * Instantiate a nonvolatile memory device based on Zephyr RTOS flash device
+ * driver.
+ *
+ * @param name: device name.
+ * @param alias: devicetree alias of the flash device.
+ */
+#define ZEPHYR_FLASH_DEVICE_DEFINE(name, alias) \
+static struct nvmParams flash_params_##name;    \
+static const struct nvmDevice name =            \
+{                                               \
+    .config = DEVICE_DT_GET(DT_ALIAS(alias)),   \
+    .priv   = &flash_params_##name,             \
+    .api    = &zephyr_flash_api                 \
+};
+
+#endif /* FLASH_ZEPHYR_H */

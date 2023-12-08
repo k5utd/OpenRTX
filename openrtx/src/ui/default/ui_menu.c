@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <utils.h>
 #include <ui/ui_default.h>
 #include <interfaces/nvmem.h>
@@ -335,6 +336,44 @@ int _ui_getSettingsGPSValueName(char *buf, uint8_t max_len, uint8_t index)
     return 0;
 }
 #endif
+
+int _ui_getRadioEntryName(char *buf, uint8_t max_len, uint8_t index)
+{
+    if(index >= settings_radio_num) return -1;
+    snprintf(buf, max_len, "%s", settings_radio_items[index]);
+    return 0;
+}
+
+int _ui_getRadioValueName(char *buf, uint8_t max_len, uint8_t index)
+{
+    if(index >= settings_radio_num)
+        return -1;
+
+    int32_t offset = 0;
+    switch(index)
+    {
+        case R_OFFSET:
+            offset = abs((int32_t)last_state.channel.tx_frequency -
+                         (int32_t)last_state.channel.rx_frequency);
+            snprintf(buf, max_len, "%gMHz", (float) offset / 1000000.0f);
+            break;
+
+        case R_DIRECTION:
+            buf[0] = (last_state.channel.tx_frequency >= last_state.channel.rx_frequency) ? '+' : '-';
+            buf[1] = '\0';
+            break;
+
+        case R_STEP:
+            // Print in kHz if it is smaller than 1MHz
+            if (freq_steps[last_state.step_index] < 1000000)
+                snprintf(buf, max_len, "%gkHz", (float) freq_steps[last_state.step_index] / 1000.0f);
+            else
+                snprintf(buf, max_len, "%gMHz", (float) freq_steps[last_state.step_index] / 1000000.0f);
+            break;
+    }
+
+    return 0;
+}
 
 int _ui_getM17EntryName(char *buf, uint8_t max_len, uint8_t index)
 {
@@ -728,12 +767,23 @@ void _ui_drawMenuInfo(ui_state_t* ui_state)
 void _ui_drawMenuAbout()
 {
     gfx_clearScreen();
-    point_t openrtx_pos = {layout.horizontal_pad, layout.line3_large_h};
+
+    point_t logo_pos;
     if(SCREEN_HEIGHT >= 100)
-        ui_drawSplashScreen(false);
+    {
+        logo_pos.x = 0;
+        logo_pos.y = SCREEN_HEIGHT / 5;
+        gfx_print(logo_pos, FONT_SIZE_12PT, TEXT_ALIGN_CENTER, yellow_fab413,
+                  "O P N\nR T X");
+    }
     else
-        gfx_print(openrtx_pos, layout.line3_large_font, TEXT_ALIGN_CENTER,
-                  color_white, currentLanguage->openRTX);
+    {
+        logo_pos.x = layout.horizontal_pad;
+        logo_pos.y = layout.line3_large_h;
+        gfx_print(logo_pos, layout.line3_large_font, TEXT_ALIGN_CENTER,
+                  yellow_fab413, currentLanguage->openRTX);
+    }
+
     uint8_t line_h = layout.menu_h;
     point_t pos = {SCREEN_WIDTH / 7, SCREEN_HEIGHT - (line_h * (author_num - 1)) - 5};
     for(int author = 0; author < author_num; author++)
@@ -894,6 +944,45 @@ void _ui_drawSettingsReset2Defaults(ui_state_t* ui_state)
     }
 
     drawcnt++;
+}
+
+void _ui_drawSettingsRadio(ui_state_t* ui_state)
+{
+    gfx_clearScreen();
+
+    // Print "Radio Settings" on top bar
+    gfx_print(layout.top_pos, layout.top_font, TEXT_ALIGN_CENTER,
+              color_white, currentLanguage->radioSettings);
+
+    // Handle the special case where a frequency is being input
+    if ((ui_state->menu_selected == R_OFFSET) && (ui_state->edit_mode))
+    {
+        char buf[17] = { 0 };
+        uint16_t rect_width = SCREEN_WIDTH - (layout.horizontal_pad * 2);
+        uint16_t rect_height = (SCREEN_HEIGHT - (layout.top_h + layout.bottom_h))/2;
+        point_t rect_origin = {(SCREEN_WIDTH - rect_width) / 2,
+                               (SCREEN_HEIGHT - rect_height) / 2};
+
+        gfx_drawRect(rect_origin, rect_width, rect_height, color_white, false);
+
+        // Print frequency with the most sensible unit
+        if (ui_state->new_offset < 1000)
+            snprintf(buf, 17, "%dHz", ui_state->new_offset);
+        else if (ui_state->new_offset < 1000000)
+            snprintf(buf, 17, "%gkHz", (float) ui_state->new_offset / 1000.0f);
+        else
+            snprintf(buf, 17, "%gMHz", (float) ui_state->new_offset / 1000000.0f);
+
+        gfx_printLine(1, 1, layout.top_h, SCREEN_HEIGHT - layout.bottom_h,
+                      layout.horizontal_pad, layout.input_font,
+                      TEXT_ALIGN_CENTER, color_white, buf);
+    }
+    else
+    {
+        // Print radio settings entries
+        _ui_drawMenuListValue(ui_state, ui_state->menu_selected, _ui_getRadioEntryName,
+                               _ui_getRadioValueName);
+    }
 }
 
 void _ui_drawMacroTop()
@@ -1072,8 +1161,12 @@ bool _ui_drawMacroMenu(ui_state_t* ui_state)
 #endif // UI_NO_KEYBOARD
         gfx_print(layout.line3_large_pos, layout.top_font, TEXT_ALIGN_RIGHT,
                   yellow_fab413, "9        ");
-        gfx_print(layout.line3_large_pos, layout.top_font, TEXT_ALIGN_RIGHT,
-                  color_white, "Lck");
+        if( ui_state->input_locked == true )
+           gfx_print(layout.line3_large_pos, layout.top_font, TEXT_ALIGN_RIGHT,
+                     color_white, "Unlk");
+        else
+           gfx_print(layout.line3_large_pos, layout.top_font, TEXT_ALIGN_RIGHT,
+                     color_white, "Lck");
 
         // Draw S-meter bar
         _ui_drawMainBottom();

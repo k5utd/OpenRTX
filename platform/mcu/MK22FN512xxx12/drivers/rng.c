@@ -1,8 +1,8 @@
 /***************************************************************************
- *   Copyright (C) 2020 - 2023 by Federico Amedeo Izzo IU2NUO,             *
- *                                Niccolò Izzo IU2KIN                      *
- *                                Frederik Saraci IU2NRO                   *
- *                                Silvano Seva IU2KWO                      *
+ *   Copyright (C) 2023 by Federico Amedeo Izzo IU2NUO,                    *
+ *                         Niccolò Izzo IU2KIN                             *
+ *                         Frederik Saraci IU2NRO                          *
+ *                         Silvano Seva IU2KWO                             *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,36 +18,24 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <stdio.h>
-#include <stdint.h>
-#include <sys/types.h>
-#include "W25Qx.h"
-#include <interfaces/delays.h>
+#include <peripherals/rng.h>
+#include <MK22F51212.h>
 
-void printChunk(void *chunk)
+void rng_init()
 {
-    uint8_t *ptr = ((uint8_t *) chunk);
-    for(size_t i = 0; i < 16; i++) printf("%02x ", ptr[i]);
-    for(size_t i = 0; i < 16; i++)
-    {
-        if((ptr[i] > 0x22) && (ptr[i] < 0x7f)) printf("%c", ptr[i]);
-        else printf(".");
-    }
+    SIM->SCGC6 |= SIM_SCGC6_RNGA(1);
+    RNG->CR    |= RNG_CR_GO(1);
 }
 
-int main()
+void rng_terminate()
 {
-    delayMs(5000);
-    W25Qx_init();
-    W25Qx_wakeup();
+    SIM->SCGC6 &= ~SIM_SCGC6_RNGA(1);
+}
 
-    for(uint32_t addr = 0; addr < 0xFFFFFF; addr += 16)
-    {
-        uint8_t buf[16];
-        (void) W25Qx_readData(addr, buf, 16);
-        printf("\r\n%08lx: ", addr);
-        printChunk(buf);
-    }
+uint32_t rng_get()
+{
+    // Wait until there is some data
+    while((RNG->SR & RNG_SR_OREG_LVL_MASK) == 0) ;
 
-    return 0;
+    return RNG->OR;
 }
