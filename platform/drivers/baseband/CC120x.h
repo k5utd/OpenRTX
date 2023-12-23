@@ -73,7 +73,7 @@ enum class CC1200_FuncMode : uint8_t
     TX  = 2,       ///< TX enabled.
 };
 
-// SPI Address Space
+// Table 4: SPI Address Space
 enum class CC1200Register : uint8_t
 {
     // R/W configuration registers, burst access possible
@@ -147,7 +147,7 @@ enum class CC1200Register : uint8_t
     TX_FIFO = 0x3F,  // TX FIFO
     RX_FIFO = 0x3F   // RX FIFO
 };
-// Extended Register Space
+// Table 5: Extended Register Space Mapping
 enum class CC1200ExtendedRegister : uint8_t
 {
     IF_MIX_CFG = 0x00,
@@ -288,125 +288,6 @@ enum class CC1200ExtendedRegister : uint8_t
     // Not Used: 0xE0 - 0xFF (AES Workspace)
     // Registers from 0xE0 to 0xEF are AES_KEY
     // Registers from 0xF0 to 0xFF are AES_BUFFER
-};
-
-
-
-/**
- * For TX mode, deviation control registers (DEVIATION_M and MODCFG_DEV_E) are set for about 5kHz.
- * For RX they are set to about 3kHz. Symbol rate is set to 24k for TX and 1.2k for RX.
- * Nobody knows why these settings work :) RX BW is about 9.5kHz. CFM is enabled in both modes.
- * AFC can be enabled in RX mode by writing to register 0x2F01.
- * Via M17-Project
- */
-const uint8_t cc1200_rx_settings[51*3] =
-{
-	0x00, CC1200Register::IOCFG2, 0x08,
-    0x00, CC1200Register::IOCFG0, 0x09,
-    0x00, CC1200Register::SYNC_CFG1, 0x1F,
-    0x00, CC1200Register::DEVIATION_M, 0x9F, //deviation - about 3kHz full scale
-    0x00, CC1200Register::MODCFG_DEV_E, 0x00, //deviation
-    0x00, CC1200Register::DCFILT_CFG, 0x5D,
-    0x00, CC1200Register::PREAMBLE_CFG1, 0x00,
-    0x00, CC1200Register::PREAMBLE_CFG0, 0x8A,
-    0x00, CC1200Register::IQIC, 0xCB,
-    0x00, CC1200Register::CHAN_BW, 0xAC, //RX filter BW - 9.5kHz
-    0x00, CC1200Register::MDMCFG1, 0x00,
-    0x00, CC1200Register::MDMCFG0, 0x45,
-    0x00, CC1200Register::SYMBOL_RATE2, 0x3F, //symbol rate 2 - 1.2k sym/s
-    0x00, CC1200Register::SYMBOL_RATE1, 0x75, //symbol rate 1
-    0x00, CC1200Register::SYMBOL_RATE0, 0x10, //symbol rate 0
-    0x00, CC1200Register::AGC_REF, 0x37,
-    0x00, CC1200Register::AGC_CS_THR, 0xEC,
-    0x00, CC1200Register::AGC_CFG3, 0x11,
-    0x00, CC1200Register::AGC_CFG1, 0x51,
-    0x00, CC1200Register::AGC_CFG0, 0x87,
-    0x00, CC1200Register::FIFO_CFG, 0x00,
-    0x00, CC1200Register::FS_CFG, 0x14,
-    0x00, CC1200Register::PKT_CFG2, 0x03,
-    0x00, CC1200Register::PKT_CFG1, 0x00,
-    0x00, CC1200Register::PKT_CFG0, 0x20,
-    0x00, CC1200Register::PA_CFG1, 0x03, //output power - 0x03..0x3F (doesn't matter for RX)
-    0x00, CC1200Register::PKT_LEN, 0xFF,
-	0x2F, CC1200Register::IF_MIX_CFG, 0x1C,
-	0x2F, CC1200Register::FREQOFF_CFG, 0x02, //AFC, 0x22 - on, 0x02 - off
-	0x2F, CC1200Register::ECG_CFG, 0x0C, //external oscillator's frequency is 40 MHz
-	0x2F, CC1200Register::MDMCFG2, 0x09, //16x upsampler, CFM enable
-	0x2F, CC1200Register::FREQ2, 0x57, //frequency - round((float)435000000/5000000*(1<<16))=0x570000
-	0x2F, CC1200Register::FREQ1, 0x00, //frequency
-	0x2F, CC1200Register::FREQ0, 0x00, //frequency
-	0x2F, CC1200ExtendedRegister::IF_ADC1, 0xEE,
-	0x2F, CC1200ExtendedRegister::IF_ADC0, 0x10,
-	0x2F, CC1200ExtendedRegister::FS_DIG1, 0x07,
-	0x2F, CC1200ExtendedRegister::FS_DIG0, 0xAF,
-	0x2F, CC1200ExtendedRegister::FS_CAL1, 0x40,
-	0x2F, CC1200ExtendedRegister::FS_CAL0, 0x0E,
-	0x2F, CC1200ExtendedRegister::FS_DIVTWO, 0x03,
-	0x2F, CC1200ExtendedRegister::FS_DSM0, 0x33,
-	0x2F, CC1200ExtendedRegister::FS_DVC0, 0x17,
-	0x2F, CC1200ExtendedRegister::FS_PFD, 0x00,
-	0x2F, CC1200ExtendedRegister::FS_PRE, 0x6E,
-	0x2F, CC1200ExtendedRegister::FS_REG_DIV_CML, 0x1C,
-	0x2F, CC1200ExtendedRegister::FS_SPARE, 0xAC,
-	0x2F, CC1200ExtendedRegister::FS_VCO0, 0xB5,
-	0x2F, CC1200ExtendedRegister::XOSC5, 0x0E,
-	0x2F, CC1200ExtendedRegister::XOSC1, 0x03,
-	0x2F, CC1200ExtendedRegister::SERIAL_STATUS, 0x08
-};
-
-const uint8_t cc1200_tx_settings[51*3] =
-{
-	0x00, CC1200Register::IOCFG2, 0x08,
-	0x00, CC1200Register::IOCFG0, 0x09,
-	0x00, CC1200Register::SYNC_CFG1, 0x1F,
-	0x00, CC1200Register::DEVIATION_M, 0x06, //deviation - 5kHz full scale
-	0x00, CC1200Register::MODCFG_DEV_E, 0x01, //deviation
-	0x00, CC1200Register::DCFILT_CFG, 0x5D,
-	0x00, CC1200Register::PREAMBLE_CFG1, 0x00,
-	0x00, CC1200Register::PREAMBLE_CFG0, 0x8A,
-	0x00, CC1200Register::IQIC, 0xCB,
-	0x00, CC1200Register::CHAN_BW, 0xAC, //RX filter BW - 9.5kHz (doesn't matter for TX)
-	0x00, CC1200Register::MDMCFG1, 0x00,
-	0x00, CC1200Register::MDMCFG0, 0x45,
-	0x00, CC1200Register::SYMBOL_RATE2, 0x83, //symbol rate 2 - 24k symb/s
-	0x00, CC1200Register::SYMBOL_RATE1, 0xA9, //symbol rate 1
-	0x00, CC1200Register::SYMBOL_RATE0, 0x2A, //symbol rate 0
-	0x00, CC1200Register::AGC_REF, 0x37,
-	0x00, CC1200Register::AGC_CS_THR, 0xEC,
-	0x00, CC1200Register::AGC_CFG3, 0x11,
-	0x00, CC1200Register::AGC_CFG1, 0x51,
-	0x00, CC1200Register::AGC_CFG0, 0x87,
-	0x00, CC1200Register::FIFO_CFG, 0x00,
-	0x00, CC1200Register::FS_CFG, 0x14,
-	0x00, CC1200Register::PKT_CFG2, 0x03,
-	0x00, CC1200Register::PKT_CFG1, 0x00,
-	0x00, CC1200Register::PKT_CFG0, 0x20,
-	0x00, CC1200Register::PA_CFG1, 0x03, //output power - 0x03..0x3F
-	0x00, CC1200Register::PKT_LEN, 0xFF,
-	0x2F, CC1200ExtendedRegister::IF_MIX_CFG, 0x1C,
-	0x2F, CC1200ExtendedRegister::FREQOFF_CFG, 0x22,
-	0x2F, CC1200ExtendedRegister::ECG_CFG, 0x0C, //external oscillator's frequency is 40 MHz
-	0x2F, CC1200ExtendedRegister::MDMCFG2, 0x09, //16x upsampler, CFM enable
-	0x2F, CC1200ExtendedRegister::FREQ2, 0x57, //frequency - round((float)435000000/5000000*(1<<16))=0x570000
-	0x2F, CC1200ExtendedRegister::FREQ1, 0x00, //frequency
-	0x2F, CC1200ExtendedRegister::FREQ0, 0x00, //frequency
-	0x2F, CC1200ExtendedRegister::IF_ADC1, 0xEE,
-	0x2F, CC1200ExtendedRegister::IF_ADC0, 0x10,
-	0x2F, CC1200ExtendedRegister::FS_DIG1, 0x07,
-	0x2F, CC1200ExtendedRegister::FS_DIG0, 0xAF,
-	0x2F, CC1200ExtendedRegister::FS_CAL1, 0x40,
-	0x2F, CC1200ExtendedRegister::FS_CAL0, 0x0E,
-	0x2F, CC1200ExtendedRegister::FS_DIVTWO, 0x03,
-	0x2F, CC1200ExtendedRegister::FS_DSM0, 0x33,
-	0x2F, CC1200ExtendedRegister::FS_DVC0, 0x17,
-	0x2F, CC1200ExtendedRegister::FS_PFD, 0x00,
-	0x2F, CC1200ExtendedRegister::FS_PRE, 0x6E,
-	0x2F, CC1200ExtendedRegister::FS_REG_DIV_CML, 0x1C,
-	0x2F, CC1200ExtendedRegister::FS_SPARE, 0xAC,
-	0x2F, CC1200ExtendedRegister::FS_VCO0, 0xB5,
-	0x2F, CC1200ExtendedRegister::XOSC5, 0x0E,
-	0x2F, CC1200ExtendedRegister::XOSC1, 0x03,
-	0x2F, CC1200ExtendedRegister::SERIAL_STATUS, 0x08
 };
 
 class CC1200
