@@ -34,32 +34,32 @@ static __aligned(32) uint8_t spi_buffer[size] __used __NOCACHE;
 const uint8_t cc1200_rx_settings[CONFIGURATION_SIZE] =
 {
 	0x00, CC1200Register::IOCFG2, 0x08,
-    0x00, CC1200Register::IOCFG0, 0x09,
-    0x00, CC1200Register::SYNC_CFG1, 0x1F,
-    0x00, CC1200Register::DEVIATION_M, 0x9F, //deviation - about 3kHz full scale
-    0x00, CC1200Register::MODCFG_DEV_E, 0x00, //deviation
-    0x00, CC1200Register::DCFILT_CFG, 0x5D,
-    0x00, CC1200Register::PREAMBLE_CFG1, 0x00,
-    0x00, CC1200Register::PREAMBLE_CFG0, 0x8A,
-    0x00, CC1200Register::IQIC, 0xCB,
-    0x00, CC1200Register::CHAN_BW, 0xAC, //RX filter BW - 9.5kHz
-    0x00, CC1200Register::MDMCFG1, 0x00,
-    0x00, CC1200Register::MDMCFG0, 0x45,
-    0x00, CC1200Register::SYMBOL_RATE2, 0x3F, //symbol rate 2 - 1.2k sym/s
-    0x00, CC1200Register::SYMBOL_RATE1, 0x75, //symbol rate 1
-    0x00, CC1200Register::SYMBOL_RATE0, 0x10, //symbol rate 0
-    0x00, CC1200Register::AGC_REF, 0x37,
-    0x00, CC1200Register::AGC_CS_THR, 0xEC,
-    0x00, CC1200Register::AGC_CFG3, 0x11,
-    0x00, CC1200Register::AGC_CFG1, 0x51,
-    0x00, CC1200Register::AGC_CFG0, 0x87,
-    0x00, CC1200Register::FIFO_CFG, 0x00,
-    0x00, CC1200Register::FS_CFG, 0x14,
-    0x00, CC1200Register::PKT_CFG2, 0x03,
-    0x00, CC1200Register::PKT_CFG1, 0x00,
-    0x00, CC1200Register::PKT_CFG0, 0x20,
-    0x00, CC1200Register::PA_CFG1, 0x03, //output power - 0x03..0x3F (doesn't matter for RX)
-    0x00, CC1200Register::PKT_LEN, 0xFF,
+	0x00, CC1200Register::IOCFG0, 0x09,
+	0x00, CC1200Register::SYNC_CFG1, 0x1F,
+	0x00, CC1200Register::DEVIATION_M, 0x9F, //deviation - about 3kHz full scale
+	0x00, CC1200Register::MODCFG_DEV_E, 0x00, //deviation
+	0x00, CC1200Register::DCFILT_CFG, 0x5D,
+	0x00, CC1200Register::PREAMBLE_CFG1, 0x00,
+	0x00, CC1200Register::PREAMBLE_CFG0, 0x8A,
+	0x00, CC1200Register::IQIC, 0xCB,
+	0x00, CC1200Register::CHAN_BW, 0xAC, //RX filter BW - 9.5kHz
+	0x00, CC1200Register::MDMCFG1, 0x00,
+	0x00, CC1200Register::MDMCFG0, 0x45,
+	0x00, CC1200Register::SYMBOL_RATE2, 0x3F, //symbol rate 2 - 1.2k sym/s
+	0x00, CC1200Register::SYMBOL_RATE1, 0x75, //symbol rate 1
+	0x00, CC1200Register::SYMBOL_RATE0, 0x10, //symbol rate 0
+	0x00, CC1200Register::AGC_REF, 0x37,
+	0x00, CC1200Register::AGC_CS_THR, 0xEC,
+	0x00, CC1200Register::AGC_CFG3, 0x11,
+	0x00, CC1200Register::AGC_CFG1, 0x51,
+	0x00, CC1200Register::AGC_CFG0, 0x87,
+	0x00, CC1200Register::FIFO_CFG, 0x00,
+	0x00, CC1200Register::FS_CFG, 0x14,
+	0x00, CC1200Register::PKT_CFG2, 0x03,
+	0x00, CC1200Register::PKT_CFG1, 0x00,
+	0x00, CC1200Register::PKT_CFG0, 0x20,
+	0x00, CC1200Register::PA_CFG1, 0x03, //output power - 0x03..0x3F (doesn't matter for RX)
+	0x00, CC1200Register::PKT_LEN, 0xFF,
 	0x2F, CC1200Register::IF_MIX_CFG, 0x1C,
 	0x2F, CC1200Register::FREQOFF_CFG, 0x02, //AFC, 0x22 - on, 0x02 - off
 	0x2F, CC1200Register::ECG_CFG, 0x0C, //external oscillator's frequency is 40 MHz
@@ -143,18 +143,18 @@ const uint8_t cc1200_tx_settings[CONFIGURATION_SIZE] =
 
 void CC1200::init()
 {
-    // TODO: Utilize a ready signal from User Guide Table 10, two XOSC periods long.
+	// TODO: Utilize a ready signal from User Guide Table 10, two XOSC periods long.
 	// Step 1. Give it a few milliseconds to power up, then send a reset command - 0x30 (1-byte write)
 	delayMs(5); // power-up delay
 	// define an array of byte pairs describing which commands to strobe
 	const uint8_t cc1200_reset[COMMAND_SIZE] = {
 		0x30|0xC0, // triggers an event determined by the address (0x30 is the reset command, and 0xC0 sets burst read mode for safety.)
 		CC1200ExtendedRegister::CFM_TX_DATA_IN,  // triggers an event determined by the address lower bits (register address) set to 0x7E
-    	0x00                                     // no data byte is expected.
+		0x00                                     // no data byte is expected.
 	};
 	writeBufferedData(cc1200_reset, COMMAND_SIZE);
 	// Step 2. Wait 100ms - probably the delay can be a lot less than that
-    delayMs(100);
+	delayMs(100);
 	// Step 3. Use the CC1200 RX settings to set up CC1200
 	writeBufferedData(cc1200_rx_settings, CONFIGURATION_SIZE);
 	// Step 4. Send either 0x34 or 0x35 command (1-byte) to enable RX or TX mode
@@ -165,7 +165,7 @@ void CC1200::init()
 	const uint8_t cc1200_burst_consecutive_write[COMMAND_SIZE] = {
 		0x2F,
 		CC1200ExtendedRegister::EXT_CTRL,  // triggers an event determined by the address lower bits (register address) set to 0x06
-    	0x00                               // burst address increment disabled (i.e. consecutive writes to the same address location in burst mode)
+		0x00                               // burst address increment disabled (i.e. consecutive writes to the same address location in burst mode)
 	};
 	writeBufferedData(cc1200_burst_consecutive_write, COMMAND_SIZE);
 	// Step 7. Start Sending Baseband Samples
@@ -180,13 +180,13 @@ void CC1200::init()
 	
 	
 	writeBufferedData(cc1200_start, COMMAND_SIZE-1); // 2-byte SPI transfer
-    
+	
 	// Don’t pull SPI_CS line high, do it after all bytes are sent.
 }
 
 void CC1200::setFuncMode(const enum mode)
 {
-    switch(mode)
+	switch(mode)
 	{
 		case IDLE:
 			uint8_t data[1] = {CC1200Register::SIDLE};
