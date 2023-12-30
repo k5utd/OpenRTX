@@ -13,14 +13,16 @@ The key is reading/writing to the CFM_TX_DATA_IN / CFM_TX_DATA_OUT registers at 
 
 */
 
+//static const struct device *const spi_dev = DEVICE_DT_GET(SPI_RADIO_DEV_NODE);
+
 #define STACK_SIZE 512
 #define FRAME_SIZE (16)
 #define COMMAND_SIZE 3
 #define CONFIGURATION_SIZE 51*COMMAND_SIZE
 #define SPI_OP  SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE
-#define SPIBB_NODE	DT_NODELABEL(spibb0) // spi baseband controller 0
+//#define SPIBB_NODE	DT_NODELABEL(spibb0)  spi baseband controller 0
 //const struct device *const dev = DEVICE_DT_GET(SPIBB_NODE);
-const struct spi_dt_spec CC1200_dev = SPI_DT_SPEC_GET(SPIBB_NODE, SPI_OP(FRAME_SIZE), 0);
+//const struct spi_dt_spec CC1200_dev = SPI_DT_SPEC_GET(SPIBB_NODE, SPI_OP(FRAME_SIZE), 0);
 
 static __aligned(32) uint8_t spi_buffer[size] __used __NOCACHE;
 
@@ -145,6 +147,10 @@ void CC1200::init()
 {
 	// TODO: Utilize a ready signal from User Guide Table 10, two XOSC periods long.
 	// Step 1. Give it a few milliseconds to power up, then send a reset command - 0x30 (1-byte write)
+
+	
+    
+
 	delayMs(5); // power-up delay
 	// define an array of byte pairs describing which commands to strobe
 	const uint8_t cc1200_reset[COMMAND_SIZE] = {

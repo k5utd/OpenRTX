@@ -37,7 +37,13 @@ static hwInfo_t hwInfo =
  */
 void platform_init()
 {
+    int ret = gpio_pin_configure_dt(&button_ptt, GPIO_INPUT);
+    //dtsi defines SPI pins as MISO GPIO2, SCLK GPIO6, CSEL, GPIO10, MOSI GPIO7
+    gpio_pin_configure_dt(&, GPIO_INPUT);
+    // TODO: pmu.init(); 
+    //For the time being make sure to return the CC1200 to IDLE state before powering off
 
+    cc1200.init();
 }
 
 /**
@@ -46,7 +52,8 @@ void platform_init()
  */
 void platform_terminate()
 {
-
+    //return the CC1200 to idle state
+    //terminate pmu
 }
 
 /**
