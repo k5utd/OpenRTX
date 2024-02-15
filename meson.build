@@ -119,8 +119,8 @@ openrtx_inc += ['lib/minmea/include']
 openrtx_inc += ['lib/qdec/include']
 
 # CODEC2, open source speech codec, compile from source on embedded
+codec2_proj = subproject('codec2')
 if meson.is_cross_build()
-  codec2_proj = subproject('codec2')
   codec2_dep  = codec2_proj.get_variable('codec2_dep')
 else
   cpp        = meson.get_compiler('cpp')
@@ -138,7 +138,7 @@ subdir('lib/miosix-kernel')
 ##
 ## Current git commit or tag
 ##
-r = run_command('git', 'describe', '--tags', '--dirty')
+r = run_command('git', 'describe', '--tags', '--dirty', '--always')
 if r.returncode() != 0
   # it failed
 endif
@@ -285,21 +285,22 @@ pulse_dep   = dependency('libpulse', required: false)
 linux_src  += openrtx_src
 linux_inc  += openrtx_inc
 linux_def  += openrtx_def
+linux_def  += {'sniprintf':'snprintf', 'vsniprintf':'vsnprintf'}
 
 #
 # Standard UI
 #
 linux_default_src = linux_src + ui_src_default
-linux_default_def = linux_def + {'SCREEN_WIDTH': '160', 'SCREEN_HEIGHT': '128', 'PIX_FMT_RGB565': '',
-                                 'GPS_PRESENT': '', 'RTC_PRESENT': ''}
-linux_small_def   = linux_def + {'SCREEN_WIDTH': '128', 'SCREEN_HEIGHT': '64', 'PIX_FMT_BW': '',
-                                 'GPS_PRESENT': '', 'RTC_PRESENT': ''}
+linux_default_def = linux_def + {'CONFIG_SCREEN_WIDTH': '160', 'CONFIG_SCREEN_HEIGHT': '128', 'CONFIG_PIX_FMT_RGB565': '',
+                                 'CONFIG_GPS': '', 'CONFIG_RTC': ''}
+linux_small_def   = linux_def + {'CONFIG_SCREEN_WIDTH': '128', 'CONFIG_SCREEN_HEIGHT': '64', 'CONFIG_PIX_FMT_BW': '',
+                                 'CONFIG_GPS': '', 'CONFIG_RTC': ''}
 
 #
 # Module17 UI
 #
 linux_mod17_src = linux_src + ui_src_module17
-linux_mod17_def = linux_def + {'SCREEN_WIDTH': '128', 'SCREEN_HEIGHT': '64', 'PIX_FMT_BW': ''}
+linux_mod17_def = linux_def + {'CONFIG_SCREEN_WIDTH': '128', 'CONFIG_SCREEN_HEIGHT': '64', 'CONFIG_PIX_FMT_BW': ''}
 
 linux_c_args   = ['-ffunction-sections', '-fdata-sections']
 linux_cpp_args = ['-ffunction-sections', '-fdata-sections', '-std=c++14']

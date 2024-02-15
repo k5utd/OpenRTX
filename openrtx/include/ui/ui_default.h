@@ -80,7 +80,7 @@ enum menuItems
     M_BANK = 0,
     M_CHANNEL,
     M_CONTACTS,
-#ifdef GPS_PRESENT
+#ifdef CONFIG_GPS
     M_GPS,
 #endif
     M_SETTINGS,
@@ -91,14 +91,16 @@ enum menuItems
 enum settingsItems
 {
     S_DISPLAY = 0,
-#ifdef RTC_PRESENT
+#ifdef CONFIG_RTC
     S_TIMEDATE,
 #endif
-#ifdef GPS_PRESENT
+#ifdef CONFIG_GPS
     S_GPS,
 #endif
     S_RADIO,
+#ifdef CONFIG_M17
     S_M17,
+#endif
     S_ACCESSIBILITY,
     S_RESET2DEFAULTS,
 };
@@ -111,16 +113,16 @@ enum backupRestoreItems
 
 enum displayItems
 {
-#ifdef SCREEN_BRIGHTNESS
+#ifdef CONFIG_SCREEN_BRIGHTNESS
     D_BRIGHTNESS = 0,
 #endif
-#ifdef SCREEN_CONTRAST
+#ifdef CONFIG_SCREEN_CONTRAST
     D_CONTRAST,
 #endif
     D_TIMER,
 };
 
-#ifdef GPS_PRESENT
+#ifdef CONFIG_GPS
 enum settingsGPSItems
 {
     G_ENABLED = 0,
@@ -192,8 +194,6 @@ typedef struct layout_t
     fontSize_t bottom_font;
     fontSize_t input_font;
     fontSize_t menu_font;
-    fontSize_t mode_font_big;
-    fontSize_t mode_font_small;
 } layout_t;
 
 /**
@@ -217,7 +217,7 @@ typedef struct ui_state_t
     freq_t new_tx_frequency;
     char new_rx_freq_buf[14];
     char new_tx_freq_buf[14];
-#ifdef RTC_PRESENT
+#ifdef CONFIG_RTC
     // Variables used for Time & Date input
     datetime_t new_timedate;
     char new_date_buf[9];
@@ -227,7 +227,7 @@ typedef struct ui_state_t
     freq_t new_offset;
     // Which state to return to when we exit menu
     uint8_t last_main_state;
-#if defined(UI_NO_KEYBOARD)
+#if defined(CONFIG_UI_NO_KEYBOARD)
     uint8_t macro_menu_selected;
 #endif // UI_NO_KEYBOARD
 }
