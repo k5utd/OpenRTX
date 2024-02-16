@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <datatypes.h>
-#include <zephyr/drivers/spi.h> // https://docs.zephyrproject.org/latest/samples/drivers/spi_bitbang/README.html#spi-bitbang
+#include <zephyr/drivers/ieee802154/ieee802154_cc1200_regs.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
