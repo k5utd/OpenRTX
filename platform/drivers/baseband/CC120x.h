@@ -106,7 +106,7 @@ class CC1200
      */
     inline void setFuncMode();
     /**
-     * Program CC120x into different modes (RX, TX, SLEEP, IDLE, etc)
+     * Program CC120x into different operational modes (N-FSK, 2-FSK, 2-GFSK, 4-FSK, 4-GFSK)
      *
      * @param mode: name of the mode to switch to.
      *
