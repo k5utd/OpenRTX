@@ -10,6 +10,10 @@
 extern "C" {
 #endif
 
+
+DEFINE_REG_READ(rssi1, CC1200_REG_RSSI1, true)
+DEFINE_REG_READ(agc_gain_adjust, CC1200_REG_AGC_GAIN_ADJUST, true)
+
 /**
  * Note: This driver does not include Legacy mode functionality.
  *
