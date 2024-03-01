@@ -1,6 +1,3 @@
-#include <peripherals/gpio.h>
-// #include <zephyr/drivers/gpio.h>                                                                                                                                                     
-#include <zephyr/drivers/spi.h>
 #include <interfaces/delays.h
 #include <hwconfig.h>
 #include "CC120x.h"
@@ -13,18 +10,12 @@ The key is reading/writing to the CFM_TX_DATA_IN / CFM_TX_DATA_OUT registers at 
 
 */
 
-//static const struct device *const spi_dev = DEVICE_DT_GET(SPI_RADIO_DEV_NODE);
+const struct device *const dev = DEVICE_DT_GET(cc1200);
 
 #define STACK_SIZE 512
 #define FRAME_SIZE (16)
 #define COMMAND_SIZE 3
 #define CONFIGURATION_SIZE 51*COMMAND_SIZE
-#define SPI_OP  SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE
-//#define SPIBB_NODE	DT_NODELABEL(spibb0)  spi baseband controller 0
-//const struct device *const dev = DEVICE_DT_GET(SPIBB_NODE);
-//const struct spi_dt_spec CC1200_dev = SPI_DT_SPEC_GET(SPIBB_NODE, SPI_OP(FRAME_SIZE), 0);
-
-static __aligned(32) uint8_t spi_buffer[size] __used __NOCACHE;
 
 /**
  * For TX mode, deviation control registers (DEVIATION_M and MODCFG_DEV_E) are set for about 5kHz.
@@ -145,49 +136,11 @@ const uint8_t cc1200_tx_settings[CONFIGURATION_SIZE] =
 
 void CC1200::init()
 {
-	// TODO: Utilize a ready signal from User Guide Table 10, two XOSC periods long.
-	// Step 1. Give it a few milliseconds to power up, then send a reset command - 0x30 (1-byte write)
-
-	
-    
-
-	delayMs(5); // power-up delay
-	// define an array of byte pairs describing which commands to strobe
-	const uint8_t cc1200_reset[COMMAND_SIZE] = {
-		0x30|0xC0, // triggers an event determined by the address (0x30 is the reset command, and 0xC0 sets burst read mode for safety.)
-		CC1200ExtendedRegister::CFM_TX_DATA_IN,  // triggers an event determined by the address lower bits (register address) set to 0x7E
-		0x00                                     // no data byte is expected.
-	};
-	writeBufferedData(cc1200_reset, COMMAND_SIZE);
-	// Step 2. Wait 100ms - probably the delay can be a lot less than that
-	delayMs(100);
-	// Step 3. Use the CC1200 RX settings to set up CC1200
-	writeBufferedData(cc1200_rx_settings, CONFIGURATION_SIZE);
-	// Step 4. Send either 0x34 or 0x35 command (1-byte) to enable RX or TX mode
+	// TODO: Utilize a ready signal from User Guide Table 10, two XOSC periods long, or get_status().
+	power_on_and_setup(dev);
+	cc1200_init(dev);
 	setFuncMode(CC1200::RX);
-	// TODO: Step 5. If necessary (eg. using a simple XO instead of proper TCXO, caesium reference or hydrogen maser) - apply frequency compensation by writing int16_t value to register 0x2F0A. See the code at the end of this paragraph.
-
-	// Step 6. Disable auto address increment for baseband SPI data transfer - write 0 to register 0x2F06
-	const uint8_t cc1200_burst_consecutive_write[COMMAND_SIZE] = {
-		0x2F,
-		CC1200ExtendedRegister::EXT_CTRL,  // triggers an event determined by the address lower bits (register address) set to 0x06
-		0x00                               // burst address increment disabled (i.e. consecutive writes to the same address location in burst mode)
-	};
-	writeBufferedData(cc1200_burst_consecutive_write, COMMAND_SIZE);
-	// Step 7. Start Sending Baseband Samples
-	// First, send a 3-byte “start”:
-	// define an array of byte pairs describing which commands to strobe
-	const uint8_t cc1200_start[COMMAND_SIZE-1] = {
-		0x2F|0x40, // triggers an event determined by the address (burst-write mode on extended registers)
-		CC1200ExtendedRegister::CFM_TX_DATA_IN,  // triggers an event determined by the address lower bits (register address) set to 0x7E
-	};
-	// Chip Select Low
 	setOpMode(CC1200::CFM);
-	
-	
-	writeBufferedData(cc1200_start, COMMAND_SIZE-1); // 2-byte SPI transfer
-	
-	// Don’t pull SPI_CS line high, do it after all bytes are sent.
 }
 
 void CC1200::setFuncMode(const enum mode)
@@ -195,16 +148,13 @@ void CC1200::setFuncMode(const enum mode)
 	switch(mode)
 	{
 		case IDLE:
-			uint8_t data[1] = {CC1200Register::SIDLE};
-			writeBufferedData(data,1);
+			instruct_sidle(dev);
 			break;
 		case RX:
-			uint8_t data[1] = {CC1200Register::SRX};
-			writeBufferedData(data,1);
+			instruct_sfrx(dev);
 			break;
 		case TX:
-			uint8_t data[1] = {CC1200Register::STX};
-			writeBufferedData(data,1);
+			instruct_sftx(dev);
 			break;
 		default:
 			break;
@@ -230,40 +180,42 @@ void CC1200::setOpMode(const enum opmode mode)
 	}
 }
 
-int16_t CC1200::readBufferedData(uint8_t address, int size)
+/**
+ * CC120X User Guide (SWRU346B) Page 105 of 114
+ *
+ * RSSI1 - Received Signal Strength Indicator Reg. 1
+ * | Bit # | Name      | Reset   | Description                    |
+ * | 7:0   | RSSI_11_4 | 0x80    | 8 MSB of RSSI[11:0].           |
+ * 
+ * RSSI0 - Received Signal Strength Indicator Reg. 0
+ * | Bit # | Name                | Description                    |
+ * | 7     | RSSI0_NOT_USED      |                                |
+ * | 6:3   | RSSI_3_0            | 4 LSB of RSSI[11:0]. See RSSI1 |
+ * | 2     | CARRIER_SENSE       | 0 No Carrier, 1 Carrier        |
+ * | 1     | CARRIER_SENSE_VALID | 0 Not Valid, 1 Valid           |
+ * | 0     | RSSI_VALID          | 0 Not Valid, 1, Valid          |
+ */
+// RSSI[11:0] is a two's complement number with 0.0625 dB resolution hence ranging from -128 to 127 dBm.
+float CC1200::getRSSI()
 {
-	const struct spi_buf spi_buffers[] = {
-	{
-		.buf = spi_buffer,
-		.len = CONFIGURATION_SIZE
-	},
-	};
-	const struct spi_buf_set spi_buffer_set = {
-		.buffers = buffer_set,
-		.count = ARRAY_SIZE(buffer_set)
-	};
-
-	ret = spi_read_dt(&CC1200_dev, &spi_buffer_set);
-
-	memset(buffer, 0, sizeof(buffer));
-	memcpy(buffer, data, sizeof(data));
-}
-
-void CC1200::writeBufferedData(uint8_t data[], int size)
-{
-	const struct spi_buf spi_buffers[] = {
-		{
-			.buf = spi_buffer,
-			.len = CONFIGURATION_SIZE
-		},
-	};
-	const struct spi_buf_set spi_buffer_set = {
-		.buffers = buffer_set,
-		.count = ARRAY_SIZE(buffer_set)
-	};
-
-	ret = spi_write_dt(&CC1200_dev, &spi_buffer_set);
-
-	memset(buffer, 0, sizeof(buffer));
-	memcpy(buffer, data, sizeof(data));
+	uint8_t RSSI0 = read_reg_rssi0(dev);
+	// (-0x80 & 1UL ) == 0
+	// A value of -128 dBm indicates that the RSSI is invalid.
+	if ( (RSSI0 & RSSI_VALID) != 0 ) {
+		// Received signal strength indicator. 8 MSB of RSSI[11:0].
+		uint8_t RSSI_11_4 = read_reg_rssi1(dev);
+		// 4 MSB of RSSI[11:0].
+		// Register value bits 6:3, (RSSI0 & 0x78) >> 3
+		uint8_t RSSI_3_0 = RSSI(RSSI0);
+		uint16_t rssi_raw = (uint16_t)(RSSI_11_4 << 4) | RSSI_3_0;
+		// AGC gain adjustment. This register is used to adjust RSSI[11:0] to the actual carrier input
+		// signal level to compensate for interpolation gains (two's complement with 1 dB resolution)
+		int16_t offset = read_reg_agc_gain_adjust(dev);
+		// To get a correct RSSI value a calibrated RSSI offset value should be subtracted from the value given by RSSI[11:0]. 
+		float rssi = (float)(rssi_raw - offset);
+		// Put RSSI in units of dBm with a resolution of 0.0625 dB (1 tick)
+		rssi *= 0.0625f;
+		return rssi;
+	}
+	return -128.0f; // invalid RSSI (dBm)
 }
