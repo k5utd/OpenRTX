@@ -4,6 +4,7 @@
 #include <datatypes.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <zephyr/drivers/ieee802154/cc1200.h>
 #include <zephyr/drivers/ieee802154/ieee802154_cc1200_regs.h>
 #ifdef __cplusplus
 extern "C" {
@@ -54,14 +55,16 @@ enum class CC1200_BW : uint8_t
 /**
  * Enumeration type defining the possible operating mode configurations for the
  * CC1200 chip.
+ * CFM -- MDMCFG2.CFM_DATA_EN = 1
  */
 enum class CC1200_OpMode : uint8_t
 {
-    CFM     = 0,  ///< N-FSK, Custom Frequency Modulation(CFM)/Analog FM.
-    _2_FSK  = 1,  ///< 2-FSK
-    _2_GFSK = 2,  ///< 2-GFSK
-    _4_FSK  = 3,  ///< 4-FSK
-    _4_GFSK = 4   ///< 4-GFSK
+    //CFM     = 0b0,  ///< N-FSK, Custom Frequency Modulation(CFM)/Analog FM.
+    _2_FSK  = 0b000,  ///< 000 2-FSK
+    _2_GFSK = 0b001,  ///< 001 2-GFSK
+    ASK_OOK = 0b011
+    _4_FSK  = 0b100,  ///< 100 4-FSK
+    _4_GFSK = 0b101   ///< 101 4-GFSK
 };
 
 /**
@@ -113,14 +116,6 @@ class CC1200
      * It should be noted that the chip status byte is sent on the SO pin.
      */
     inline void setOpMode();
-
-    /**
-     * Read and write buffered data (RX FIFO and TX FIFO)
-     *
-     */
-    inline int8_t readBufferedData();
-
-    inline void writeBufferedData();
 
     int readStatus()
     {
