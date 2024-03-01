@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 
-
 DEFINE_REG_READ(rssi1, CC1200_REG_RSSI1, true)
 DEFINE_REG_READ(agc_gain_adjust, CC1200_REG_AGC_GAIN_ADJUST, true)
 
@@ -63,12 +62,11 @@ enum class CC1200_BW : uint8_t
  */
 enum class CC1200_OpMode : uint8_t
 {
-    //CFM     = 0b0,  ///< N-FSK, Custom Frequency Modulation(CFM)/Analog FM.
-    _2_FSK  = 0b000,  ///< 000 2-FSK
-    _2_GFSK = 0b001,  ///< 001 2-GFSK
-    ASK_OOK = 0b011
-    _4_FSK  = 0b100,  ///< 100 4-FSK
-    _4_GFSK = 0b101   ///< 101 4-GFSK
+    // CFM     = 0b0,  ///< N-FSK, Custom Frequency Modulation(CFM)/Analog FM.
+    _2_FSK  = 0b000,                 ///< 000 2-FSK
+    _2_GFSK = 0b001,                 ///< 001 2-GFSK
+    ASK_OOK = 0b011 _4_FSK = 0b100,  ///< 100 4-FSK
+    _4_GFSK                = 0b101   ///< 101 4-GFSK
 };
 
 /**
@@ -113,7 +111,8 @@ class CC1200
      */
     inline void setFuncMode();
     /**
-     * Program CC120x into different operational modes (N-FSK, 2-FSK, 2-GFSK, 4-FSK, 4-GFSK)
+     * Program CC120x into different operational modes (N-FSK, 2-FSK, 2-GFSK,
+     * 4-FSK, 4-GFSK)
      *
      * @param mode: name of the mode to switch to.
      *
