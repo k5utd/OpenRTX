@@ -56,7 +56,7 @@ void radio_setOpmode(const enum opmode mode)
         //     break;
 
         case OPMODE_M17:
-            cc1200.setOpMode(CC1200_OpMode::CFM); 
+            //cc1200.setOpMode(CC1200_OpMode::CFM); 
             cc1200.setBandwidth(CC1200_BW::_9P5);  // Set bandwidth to 9.5kHz for proper deviation
             break;
 
@@ -72,30 +72,27 @@ bool radio_checkRxDigitalSquelch()
 
 void radio_enableRx()
 {
-
+    cc1200.setFuncMode(CC1200_FuncMode::RX);
 }
 
 void radio_enableTx()
 {
-
+    cc1200.setFuncMode(CC1200_FuncMode::TX);
 }
 
 void radio_disableRtx()
 {
-
+    cc1200.setFuncMode(CC1200_FuncMode::IDLE);
 }
 
 void radio_updateConfiguration()
 {
-
+    
 }
 
-// Per 6.9 RSSI,
-// The RSSI is a 12 bits two's complement number with 0.0625 dB
-// resolution hence ranging from –128 to 127 dBm (-128 is invalid)
 float radio_getRssi()
 {
-    return -65.0f;  // S1 level: -65dBm
+    return cc1200.getRSSI();  // S1 level: -65dBm
 }
 
 enum opstatus radio_getStatus()
