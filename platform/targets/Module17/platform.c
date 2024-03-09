@@ -135,8 +135,10 @@ int8_t platform_getChSelector()
 
 bool platform_getPttStatus()
 {
-    /* PTT line has a pullup resistor with PTT switch closing to ground */
-    return (gpio_readPin(PTT_SW) == 0) ? true : false;
+    // Return true if gpio status matches the PTT in active level, that is
+    // NOT(ptt XOR level)
+    uint8_t ptt_status = gpio_readPin(PTT_SW);
+    return ~(ptt_status ^ mod17CalData.ptt_in_level);
 }
 
 bool platform_pwrButtonStatus()
