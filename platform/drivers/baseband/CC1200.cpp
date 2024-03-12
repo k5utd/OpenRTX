@@ -81,7 +81,7 @@ const struct cc1200_rf_registers_set cc1200_rf_settings = {
         0xCB, // 0x0F IQIC: IQIC_EN = 1, IQIC_UPDATE_COEFF_EN = 1, IQIC_BLEN_SETTLE = 00 IQIC_BLEN = 10, IQIC_IMGCH_LEVEL_THR = 11
         //
         // Channel Filter Configuration
-        // RX filter BW - 9.5 kHz
+        // RX_FILTER_BW = f_xosc/(CHAN_BW.ADC_CIC_DEFACT*CHAN_BW.BB_CIC_DEFACT*2) Hz = 9.5 kHz
         0xAC, // 0x10 CHAN_BW.ADC_CIC_DECFACT = 48, CHAN_BW.BB_CIC_DECFACT = 44
         // 8.9.2 Transparent Serial Mode Configuration
         0x00, // 0x11 MDMCFG1.FIFO_EN = 0 
@@ -186,6 +186,12 @@ const struct cc1200_rf_registers_set cc1200_rf_settings = {
         0xAC,                   // 0x22 FS_SPARE = 0xAC
         0x00, 0x00, 0x00, 0x00, // 0x23-0x26 FS_VCO
         0xB5,                   // 0x27 FS_VCO0 = 0xB5
+        0x00, 0x00, 0x00, 0x00, // 0x28-0x2E GBIAS
+        0x00, 0x00, 0x00,       // 
+        // Intermediate Frequency Amplifier Configuration
+        // Single-Side BW > f_if + RX_FILTER_BW/2= 300 kHz
+        0x00,                   // 0x2F IFAMP.IFAMP_BW = 00
+        0x00, 0x00,             // 0x30 LNA, 0x31 RXMIX
         // Crystal Oscillator Configuration
         // XOSC_BUF_SEL: Select low phase noise, differential buffer (low power buffer still used for digital clock)
         // XOSC_STABLE: Set XOSC is stable (has finished setting)
