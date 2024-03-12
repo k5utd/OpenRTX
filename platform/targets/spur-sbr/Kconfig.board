@@ -8,5 +8,5 @@ config BOARD_K5UTD_SPUR-SBR
 	depends on SOC_SERIES_ESP32C3
 
 choice SOC_PART_NUMBER
-	default SOC_ESP32C3_WROOM_N4
+	default SOC_ESP32C3_WROOM_02_N4
 endchoice
