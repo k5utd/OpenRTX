@@ -72,11 +72,11 @@ void platform_init()
     audio_init();
 
     /* Set defaults for calibration */
-    mod17CalData.tx_wiper     = 0x080;
-    mod17CalData.rx_wiper     = 0x080;
-    mod17CalData.bb_tx_invert = 0;
-    mod17CalData.bb_rx_invert = 0;
-    mod17CalData.mic_gain     = 0;
+    mod17CalData.tx_wiper        = 0x080;
+    mod17CalData.rx_wiper        = 0x080;
+    mod17CalData.bb_bb_tx_invert = 0;
+    mod17CalData.bb_bb_rx_invert = 0;
+    mod17CalData.mic_gain        = 0;
 
     /*
      * Hardware version is set using a voltage divider on PA3.
@@ -135,10 +135,12 @@ int8_t platform_getChSelector()
 
 bool platform_getPttStatus()
 {
-    // Return true if gpio status matches the PTT in active level, that is
-    // NOT(ptt XOR level)
+    // Return true if gpio status matches the PTT in active level
     uint8_t ptt_status = gpio_readPin(PTT_SW);
-    return ~(ptt_status ^ mod17CalData.ptt_in_level);
+    if(ptt_status == mod17CalData.ptt_in_level)
+        return true;
+
+    return false;
 }
 
 bool platform_pwrButtonStatus()
