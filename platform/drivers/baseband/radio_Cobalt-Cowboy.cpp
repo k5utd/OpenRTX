@@ -19,7 +19,7 @@
  ***************************************************************************/
 
 #include <interfaces/radio.h>
-#include "CC120x.h"
+#include <CC1200.h>
 
 CC1200& cc1200 = CC1200::instance();
 

@@ -1,4 +1,4 @@
-identifier: spur-sbr
+identifier: cobalt-cowboy
 name: ESP32-C3
 type: mcu
 arch: riscv32

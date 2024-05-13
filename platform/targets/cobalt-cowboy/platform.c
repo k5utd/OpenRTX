@@ -3,7 +3,7 @@
 #include <hwconfig.h>
 
 #include <zephyr/drivers/gpio.h>
-#include <CC120x.h>
+#include <CC1200.h>
 
 /**
  * Standard interface for device-specific hardware.
@@ -21,7 +21,7 @@ static const struct device *const qdec_dev = DEVICE_DT_GET(DT_ALIAS(qdec0));
 
 static hwInfo_t hwInfo =
 {
-    .name        = "spur-sbr",
+    .name        = "cobalt-cowboy",
     .hw_version  = 0,
     .uhf_band    = 0,
     .vhf_band    = 0,

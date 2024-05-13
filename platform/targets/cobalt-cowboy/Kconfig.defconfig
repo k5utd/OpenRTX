@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 config BOARD
-	default "K5UTD_SPURSBR"
-	depends on BOARD_K5UTD_SPURSBR
+	default "K5UTD_COBALT_COWBOY"
+	depends on BOARD_K5UTD_COBALT_COWBOY
 
 config HEAP_MEM_POOL_SIZE
 	default 98304 if WIFI
