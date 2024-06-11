@@ -1,6 +1,6 @@
 #include <hwconfig.h>
 #include <interfaces/delays.h>
-#include "CC120x.h"
+#include "CC1200.h"
 
 const struct device* const dev = DEVICE_DT_GET(cc1200);
 
@@ -202,12 +202,25 @@ const struct cc1200_rf_registers_set cc1200_rf_settings = {
         0x00, 0x00              // 0x38 ANALOG_SPARE, 0x39 PA_CFG3
 	}
 };
+// fifo 128 BYTES, 9600 Baud:
+
+// 24k baud / 16 = 1.5kbaud
 
 void CC1200::init()
 {
     // TODO: Utilize a ready signal from User Guide Table 10, two (2.7?) XOSC periods
     // long, or get_status().
-    power_on_and_setup(dev);
+    // power_on_and_setup(dev);
+    // for power on and setup, if these command strobes cannot be sent.
+    // the device has likely entered a state where it cannot be initialized.
+    if (!instruct_sidle(dev) ||
+	    !instruct_sftx(dev) ||
+	    !instruct_sfrx(dev) ||
+	    rf_calibrate(dev)) {
+		LOG_ERR("Could not proceed");
+		return -EIO;
+	}
+
     /** 
      * 8.9.2 Transparent Serial Mode Configuration (Contd.)
      * The Zephyr 802.15.4 driver arbitrated on IOCFG values and serial status.
@@ -250,6 +263,7 @@ void CC1200::setOpMode(const enum opmode mode)
     switch (mode)
     {
         case CFM:
+            write_reg_ext_ctrl(BURST_ADDR_INCR_EN)
             break;
         case _2_FSK:
             break;
@@ -264,46 +278,4 @@ void CC1200::setOpMode(const enum opmode mode)
     }
 }
 
-/**
- * CC120X User Guide (SWRU346B) Page 105 of 114
- *
- * RSSI1 - Received Signal Strength Indicator Reg. 1
- * | Bit # | Name      | Reset   | Description                    |
- * | 7:0   | RSSI_11_4 | 0x80    | 8 MSB of RSSI[11:0].           |
- *
- * RSSI0 - Received Signal Strength Indicator Reg. 0
- * | Bit # | Name                | Description                    |
- * | 7     | RSSI0_NOT_USED      |                                |
- * | 6:3   | RSSI_3_0            | 4 LSB of RSSI[11:0]. See RSSI1 |
- * | 2     | CARRIER_SENSE       | 0 No Carrier, 1 Carrier        |
- * | 1     | CARRIER_SENSE_VALID | 0 Not Valid, 1 Valid           |
- * | 0     | RSSI_VALID          | 0 Not Valid, 1, Valid          |
- */
-// RSSI[11:0] is a two's complement number with 0.0625 dB resolution hence
-// ranging from -128 to 127 dBm.
-float CC1200::getRSSI()
-{
-    uint8_t RSSI0 = read_reg_rssi0(dev);
-    // (-0x80 & 1UL ) == 0
-    // A value of -128 dBm indicates that the RSSI is invalid.
-    if ((RSSI0 & RSSI_VALID) != 0)
-    {
-        // Received signal strength indicator. 8 MSB of RSSI[11:0].
-        uint8_t RSSI_11_4 = read_reg_rssi1(dev);
-        // 4 MSB of RSSI[11:0].
-        // Register value bits 6:3, (RSSI0 & 0x78) >> 3
-        uint8_t RSSI_3_0  = RSSI(RSSI0);
-        uint16_t rssi_raw = (uint16_t)(RSSI_11_4 << 4) | RSSI_3_0;
-        // AGC gain adjustment. This register is used to adjust RSSI[11:0] to
-        // the actual carrier input signal level to compensate for interpolation
-        // gains (two's complement with 1 dB resolution)
-        int16_t offset = read_reg_agc_gain_adjust(dev);
-        // To get a correct RSSI value a calibrated RSSI offset value should be
-        // subtracted from the value given by RSSI[11:0].
-        float rssi = (float)(rssi_raw - offset);
-        // Put RSSI in units of dBm with a resolution of 0.0625 dB (1 tick)
-        rssi *= 0.0625f;
-        return rssi;
-    }
-    return -128.0f;  // invalid RSSI (dBm)
-}
+

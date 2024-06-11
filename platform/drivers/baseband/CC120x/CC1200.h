@@ -1,17 +1,107 @@
 #ifndef CC1200_H
 #define CC1200_H
 
+// #include <zephyr/drivers/ieee802154/cc1200.h>
+
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+
 #include <datatypes.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <zephyr/drivers/ieee802154/cc1200.h>
-#include <zephyr/drivers/ieee802154/ieee802154_cc1200_regs.h>
+
+#include "registers.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Zephyr Internal Routine for CC1200 Device Register Access
+ ***************************
+ */
+bool z_cc1200_access_reg(const struct device *dev, bool read, uint8_t addr,
+			 void *data, size_t length, bool extended, bool burst);
+
+/* Public Routines for CC1200 Device Registers
+ ***************************
+ */
+static inline uint8_t cc1200_read_single_reg(const struct device *dev,
+					     uint8_t addr, bool extended)
+{
+	uint8_t val;
+
+	if (z_cc1200_access_reg(dev, true, addr, &val, 1, extended, false)) {
+		return val;
+	}
+
+	return 0;
+}
+
+static inline bool cc1200_write_single_reg(const struct device *dev,
+					   uint8_t addr, uint8_t val, bool extended)
+{
+	return z_cc1200_access_reg(dev, false, addr, &val, 1, extended, false);
+}
+// The CC1200 
+static inline bool cc1200_instruct(const struct device *dev, uint8_t addr)
+{
+	return z_cc1200_access_reg(dev, false, addr, NULL, 0, false, false);
+}
+
+/* Named Macros for CC1200 Device Registers
+ * Replacement sequences used for implementation clarity.
+ */
+#define DEFINE_REG_READ(__reg_name, __reg_addr, __ext)			          \
+	static inline uint8_t read_reg_##__reg_name(const struct device *dev) \
+	{								                                      \
+		return cc1200_read_single_reg(dev, __reg_addr, __ext);	          \
+	}
+
+DEFINE_REG_READ(rssi0, CC1200_REG_RSSI0, true)
 DEFINE_REG_READ(rssi1, CC1200_REG_RSSI1, true)
 DEFINE_REG_READ(agc_gain_adjust, CC1200_REG_AGC_GAIN_ADJUST, true)
+
+#define DEFINE_REG_WRITE(__reg_name, __reg_addr, __ext)			          \
+	static inline bool write_reg_##__reg_name(const struct device *dev,   \
+						  uint8_t val)	                            	  \
+	{								                                      \
+		return cc1200_write_single_reg(dev, __reg_addr,		              \
+					       val, __ext);		                              \
+	}
+
+DEFINE_REG_WRITE(iocfg3, CC1200_REG_IOCFG3, false) //IO
+DEFINE_REG_WRITE(iocfg2, CC1200_REG_IOCFG2, false)
+DEFINE_REG_WRITE(iocfg0, CC1200_REG_IOCFG0, false)
+DEFINE_REG_WRITE(pa_cfg1, CC1200_REG_PA_CFG1, false)
+DEFINE_REG_WRITE(pkt_len, CC1200_REG_PKT_LEN, false)
+
+DEFINE_REG_WRITE(mdmcfg2, CC1200_REG_MDMCFG2, true)
+DEFINE_REG_WRITE(ext_ctrl, CC1200_REG_EXT_CTRL, true)
+
+#define DEFINE_STROBE_INSTRUCTION(__ins_name, __ins_addr)		   \
+	static inline bool instruct_##__ins_name(const struct device *dev) \
+	{								   \
+		return cc1200_instruct(dev, __ins_addr);		   \
+	}
+
+DEFINE_STROBE_INSTRUCTION(sres, CC1200_INS_SRES)
+DEFINE_STROBE_INSTRUCTION(sfstxon, CC1200_INS_SFSTXON)
+DEFINE_STROBE_INSTRUCTION(sxoff, CC1200_INS_SXOFF)
+DEFINE_STROBE_INSTRUCTION(scal, CC1200_INS_SCAL)
+DEFINE_STROBE_INSTRUCTION(srx, CC1200_INS_SRX)
+DEFINE_STROBE_INSTRUCTION(stx, CC1200_INS_STX)
+DEFINE_STROBE_INSTRUCTION(sidle, CC1200_INS_SIDLE)
+DEFINE_STROBE_INSTRUCTION(safc, CC1200_INS_SAFC)
+DEFINE_STROBE_INSTRUCTION(swor, CC1200_INS_SWOR)
+DEFINE_STROBE_INSTRUCTION(spwd, CC1200_INS_SPWD)
+DEFINE_STROBE_INSTRUCTION(sfrx, CC1200_INS_SFRX)
+DEFINE_STROBE_INSTRUCTION(sftx, CC1200_INS_SFTX)
+DEFINE_STROBE_INSTRUCTION(sworrst, CC1200_INS_SWORRST)
+DEFINE_STROBE_INSTRUCTION(snop, CC1200_INS_SNOP)
+
+#define CC1200_INVALID_RSSI INT8_MIN
 
 /**
  * Note: This driver does not include Legacy mode functionality.
@@ -140,16 +230,7 @@ class CC1200
      * (GAIN_ADJUSTMENT = 0x9D (−99)). When the same signal is input to the
      * antenna, the RSSI[11:0] register will be 0xBF0 (–65)
      */
-    float readRSSI()
-    {
-        // 0x71-0x72 RSSI1, RSSI0
-        // int16_t RSSI1 = SPI_readReg16(CC1200ExtendedRegister::RSSI1);
-
-        // int ret = spi_transceive(dev);
-
-        return 0.0f;
-    }
-
+    float readRSSI();
    private:
 };
 
